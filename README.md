@@ -1,69 +1,105 @@
 # 🎬 Smart Video Trimmer (Drag & Paste)
 
-Smart Video Trimmer, video içerik üreticileri ve hızlıca video kesmek isteyenler için tasarlanmış **hafif, kayıpsız ve ultra pratik** bir Windows masaüstü aracıdır.
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-download--run-portable-exe">Download</a> •
+  <a href="#-shortcuts--usage">Usage</a> •
+  <a href="#-run-from-source">Developers</a> •
+  <a href="#-türkçe-özet">Türkçe Özet</a>
+</p>
 
-Videoyu tekrar encode edip dakikalarca beklemek yerine **FFmpeg Stream Copy** teknolojisiyle kalite kaybı yaşamadan **1 saniyede** keser.
+Smart Video Trimmer is a **lightweight, lossless, and ultra-fast** Windows desktop application designed for video creators and anyone needing instant video trimming.
 
----
-
-![Smart Video Trimmer Önizleme](preview.jpg)
-
----
-
-## 🌟 Neden Farklı? (Öne Çıkan Özellikler)
-
-- 🖱️ **Klasöre / Masaüstüne Sürükle-Bırak (Drag-to-Save):**  
-  Timeline üzerinde belirlediğiniz aralığı fareyle tutup doğrudan Windows Dosya Gezgini'ndeki bir klasöre veya masaüstüne sürükleyin. Parça anında oraya kaydedilir!
-- 📋 **Panoya Kopyala & Yapıştır (Ctrl+C & Ctrl+V):**  
-  Aralığı seçip `Ctrl+C` yapın; bilgisayarınızdaki herhangi bir klasöre gidip `Ctrl+V` yaptığınızda kesilmiş video dosyanız hazır.
-- ⚡ **Kayıpsız & Işık Hızında (Lossless):**  
-  Videonun formatını yeniden kodlamaz (`-c copy`), bu sayede 4K videolar bile saniyeler içinde kesilir ve orijinal görüntü kalitesi %100 korunur.
-- 🎯 **Kolay Video Yükleme:**  
-  İstediğiniz videoyu doğrudan uygulamanın üzerine sürükleyip bırakın.
-- ⏱️ **Milisaniyelik Hassasiyet:**  
-  Sağ tıkla aralık seçimi ve ayarlanabilir hassas tutamaçlar (handles).
+Instead of re-encoding and waiting for minutes, it cuts video clips **in 1 second without quality loss** using **FFmpeg Stream Copy** technology.
 
 ---
 
-## 📥 İndir & Çalıştır (Kurulumsuz .EXE)
-
-Herhangi bir Python veya ek kütüphane kurmanıza gerek yoktur:
-
-1. [Releases](../../releases) bölümünden en güncel **`SmartVideoTrimmer.exe`** dosyasını indirin.
-2. Çift tıklayarak doğrudan kullanmaya başlayın!
+![Smart Video Trimmer Preview](preview.jpg)
 
 ---
 
-## 🛠️ Kaynak Koddan Çalıştırma (Geliştiriciler İçin)
+## 🌟 Features
 
-Python ile çalıştırmak veya projeye katkı sunmak isterseniz:
+- 🖱️ **Drag-to-Folder (Direct Export):**  
+  Select a clip on the timeline and simply drag the yellow range directly onto Windows Explorer or your Desktop. The clip is saved instantly into that folder!
+- 📋 **Clipboard Copy & Paste (Ctrl+C / Ctrl+V):**  
+  Select a clip, press `Ctrl+C`, navigate to any folder in Windows, and press `Ctrl+V`. Your cut video file is right there!
+- ⚡ **Lossless & Lightning Fast:**  
+  Zero re-encoding (`-c copy`). Even 4K / 60fps clips are trimmed in seconds while retaining 100% of the original video and audio quality.
+- 🎯 **Effortless Loading:**  
+  Drag and drop any video file directly into the application window.
+- ⏱️ **Millisecond Precision Timeline:**  
+  Interactive seekbar with draggable start/end handles and smooth hover preview lines.
+- 🌐 **Bilingual (EN / TR):**  
+  Toggle between English and Turkish with a single click using the flag button (🇬🇧 / 🇹🇷).
 
+---
+
+## 📥 Download & Run (Portable .EXE)
+
+No Python or dependencies required:
+
+1. Go to the [Releases](https://github.com/mehmedzen/video-trimmer/releases) page.
+2. Download **`SmartVideoTrimmer.exe`**.
+3. Double-click and start trimming!
+
+---
+
+## 🎮 Shortcuts & Usage
+
+| Action | How to |
+|---|---|
+| **Open Video** | Drag & drop video onto the window, or press `Ctrl + O` |
+| **Play / Pause** | `Spacebar` |
+| **Select Clip Range** | **Hold Right-Click and drag** on the timeline (or `Shift + Left-Click`) |
+| **Adjust Range** | Drag the yellow handles on the start/end points |
+| **Copy to Clipboard** | `Ctrl + C` (then `Ctrl + V` in any Explorer folder) |
+| **Drag-Out to Save** | Click & drag the yellow selection bar directly into Desktop/Folder |
+| **Save As** | Click `✂ Save As...` button |
+| **Switch Language** | Click the flag icon (🇬🇧 / 🇹🇷) at the bottom right |
+
+---
+
+## 🛠️ Run from Source (Developers)
+
+If you'd like to run from source code or contribute:
+
+### Prerequisites
+- Python 3.10+
+- [FFmpeg](https://ffmpeg.org/download.html) (must be in system PATH)
+
+### Quick Start
 ```bash
-# 1. Repoyu klonlayın
-git clone https://github.com/KULLANICI_ADINIZ/video-trimmer.git
+# 1. Clone the repository
+git clone https://github.com/mehmedzen/video-trimmer.git
 cd video-trimmer
 
-# 2. Bağımlılıkları yükleyin
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Başlatın
+# 3. Launch the app
 python app.py
 ```
+*(On Windows, you can also double-click `run.bat`)*
 
 ---
 
-## 🎮 Kısayollar ve Kullanım
+<details>
+<summary><b>🇹🇷 Türkçe Özet</b></summary>
 
-| Eylem | Nasıl Yapılır? |
-|---|---|
-| **Video Aç** | Pencereye video sürükleyin veya `Ctrl+O` |
-| **Oynat / Duraklat** | `Boşluk (Space)` tuşu |
-| **Aralık Seç** | Timeline üzerinde **Sağ Tık ile basılı tutup sürükleyin** (veya `Shift + Sol Tık`) |
-| **Parçayı Kopyala** | `Ctrl + C` (sonra klasörde `Ctrl + V`) |
-| **Doğrudan Klasöre Bırak** | Seçilen sarı alandan tutup masaüstüne/klasöre sürükleyin |
-| **Farklı Kaydet** | `✂ Farklı Kaydet...` butonu |
+### 🎬 Akıllı Video Kırpıcı (Sürükle & Yapıştır)
+
+Smart Video Trimmer, video içerik üreticileri için tasarlanmış kayıpsız ve ultra hızlı bir Windows video kesme aracıdır.
+
+- **Klasöre Sürükle-Bırak:** Timeline'da seçtiğin sarı alanı tutup doğrudan masaüstüne veya bir klasöre sürükleyerek kaydedebilirsin.
+- **Kopyala / Yapıştır (Ctrl+C / Ctrl+V):** Seçili aralığı kopyalayıp herhangi bir klasörde `Ctrl+V` ile anında oluşturabilirsin.
+- **Kayıpsız & Hızlı:** FFmpeg stream copy (`-c copy`) ile yeniden kodlamadan 1 saniyede keser.
+- **Dil Seçeneği:** Sağ alttaki bayrak butonu ile Türkçe ve İngilizce arasında tek tıkla geçiş yapabilirsin.
+
+Detaylar için [Releases](https://github.com/mehmedzen/video-trimmer/releases) sekmesinden kurulumsuz `.exe` dosyasını indirebilirsin.
+</details>
 
 ---
 
-## 📄 Lisans
-Bu proje [MIT](LICENSE) lisansı altındadır.
+## 📄 License
+This project is licensed under the [MIT](LICENSE) License.
