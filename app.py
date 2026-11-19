@@ -10,10 +10,59 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QLabel, QPushButton, QFileDialog, QMessageBox, QToolTip, QFrame
+    QLabel, QPushButton, QFileDialog, QMessageBox, QToolTip, QFrame,
+    QComboBox
 )
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
+
+
+TRANSLATIONS = {
+    "tr": {
+        "title": "Smart Video Trimmer - Drag & Paste",
+        "open_video": "📁 Video Aç...",
+        "play": "▶ Oynat",
+        "pause": "⏸ Duraklat",
+        "no_selection": "Seçim: Yok (Timeline'da Sağ Tık / Shift ile Seç)",
+        "selection_format": "✂ Seçim: {start} → {end} ({dur})",
+        "copy": "📋 Kopyala (Ctrl+C)",
+        "copy_tooltip": "Seçili aralığı kopyala. Herhangi bir klasöre Ctrl+V ile yapıştırabilirsin.",
+        "save_as": "✂ Farklı Kaydet...",
+        "clear": "✕ Temizle",
+        "copied_title": "✔ Video parçası kopyalandı!",
+        "copied_body": "İstediğin klasöre gidip Ctrl+V ile yapıştırabilirsin.\n({filename})",
+        "no_selection_msg": "Lütfen önce timeline üzerinde mouse ile sürükleyerek bir aralık belirleyin.",
+        "no_selection_title": "Seçim Yok",
+        "error_title": "Hata",
+        "error_cut": "Video parçası kesilirken bir sorun oluştu.",
+        "save_dialog_title": "Parçayı Farklı Kaydet",
+        "save_success_title": "Başarılı",
+        "save_success_msg": "Yeni video parçası başarıyla kaydedildi:\n{path}",
+        "video_filter": "Video Dosyaları (*.mp4 *.mkv *.avi *.mov *.wmv *.flv *.webm);;Tüm Dosyalar (*.*)"
+    },
+    "en": {
+        "title": "Smart Video Trimmer - Drag & Paste",
+        "open_video": "📁 Open Video...",
+        "play": "▶ Play",
+        "pause": "⏸ Pause",
+        "no_selection": "Selection: None (Right Click / Shift to Select on Timeline)",
+        "selection_format": "✂ Selection: {start} → {end} ({dur})",
+        "copy": "📋 Copy (Ctrl+C)",
+        "copy_tooltip": "Copy selected range. You can paste it into any folder with Ctrl+V.",
+        "save_as": "✂ Save As...",
+        "clear": "✕ Clear",
+        "copied_title": "✔ Video clip copied!",
+        "copied_body": "Go to any folder and paste with Ctrl+V.\n({filename})",
+        "no_selection_msg": "Please select a range on the timeline first using mouse drag.",
+        "no_selection_title": "No Selection",
+        "error_title": "Error",
+        "error_cut": "An error occurred while cutting the video clip.",
+        "save_dialog_title": "Save Clip As",
+        "save_success_title": "Success",
+        "save_success_msg": "Video clip saved successfully:\n{path}",
+        "video_filter": "Video Files (*.mp4 *.mkv *.avi *.mov *.wmv *.flv *.webm);;All Files (*.*)"
+    }
+}
 
 
 def format_time(ms: int) -> str:
@@ -59,17 +108,12 @@ class VideoTrimWorker:
             )
             return res.returncode == 0
         except Exception as e:
-            print(f"Trim hatası: {e}")
+            print(f"Trim error: {e}")
             return False
 
 
 class TimelineSlider(QWidget):
-    """
-    Video timeline bileşeni.
-    - Oynatma imlecini gösterir ve tıklanıp sürüklenerek gezinti sağlar.
-    - Sağ tık veya Shift+Sol tık ile aralık seçilir.
-    - Sarı alandan tutulup Explorer klasörüne sürüklenebilir (Drag-to-Save).
-    """
+    """Video timeline bileşeni."""
     seek_requested = pyqtSignal(int)
     range_changed = pyqtSignal(int, int)
     drag_started = pyqtSignal()
@@ -140,11 +184,10 @@ class TimelineSlider(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         w = self.width()
-        h = self.height()
         bar_y = 14
         bar_h = 22
 
-        # 1. Timeline Çubuğu Arka Planı
+        # 1. Timeline Arka Planı
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(30, 32, 40))
         painter.drawRoundedRect(0, bar_y, w, bar_h, 5, 5)
@@ -152,7 +195,7 @@ class TimelineSlider(QWidget):
         if self.duration <= 0:
             return
 
-        # 2. Oynatılan İlerleme (Mavi Çizgi)
+        # 2. Oynatılan İlerleme (Mavi)
         play_x = self.ms_to_x(self.position)
         prog_grad = QLinearGradient(0, 0, play_x, 0)
         prog_grad.setColorAt(0, QColor(0, 150, 255, 160))
@@ -160,25 +203,22 @@ class TimelineSlider(QWidget):
         painter.setBrush(prog_grad)
         painter.drawRoundedRect(0, bar_y, int(play_x), bar_h, 5, 5)
 
-        # 3. Seçilen Kesim Aralığı (Sarı / Altın Alan)
+        # 3. Seçilen Kesim Aralığı (Sarı Alan)
         if self.has_valid_selection():
             s_x = self.ms_to_x(self.start_cut)
             e_x = self.ms_to_x(self.end_cut)
             sel_w = max(2.0, e_x - s_x)
 
-            # Seçili alan
             painter.setBrush(QColor(255, 180, 0, 130))
             painter.setPen(QPen(QColor(255, 193, 7), 2))
             painter.drawRect(int(s_x), bar_y, int(sel_w), bar_h)
 
-            # Tutamaçlar
             handle_w = 8
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(255, 215, 0))
             painter.drawRoundedRect(int(s_x - handle_w / 2), bar_y - 3, handle_w, bar_h + 6, 3, 3)
             painter.drawRoundedRect(int(e_x - handle_w / 2), bar_y - 3, handle_w, bar_h + 6, 3, 3)
 
-            # Seçili süre yazısı
             dur_txt = f"✂ {format_time(self.end_cut - self.start_cut)}"
             painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
             painter.setPen(QColor(255, 235, 59))
@@ -306,8 +346,9 @@ class MainWindow(QMainWindow):
     """Ana Uygulama Penceresi"""
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Smart Video Trimmer - Drag & Paste")
-        self.resize(1020, 680)
+        self.current_lang = "tr"
+        self.setWindowTitle(self.t("title"))
+        self.resize(1050, 680)
         self.setMinimumSize(700, 480)
         self.current_video_path = ""
         self.temp_cut_files = []
@@ -325,7 +366,7 @@ class MainWindow(QMainWindow):
                 color: #ffffff;
                 border: 1px solid #3d4253;
                 border-radius: 6px;
-                padding: 7px 16px;
+                padding: 7px 15px;
                 font-family: 'Segoe UI';
                 font-size: 13px;
                 font-weight: 600;
@@ -349,9 +390,26 @@ class MainWindow(QMainWindow):
                 font-family: 'Consolas', 'Segoe UI';
                 font-size: 13px;
             }
+            QComboBox {
+                background-color: #2b2e3b;
+                color: #ffffff;
+                border: 1px solid #3d4253;
+                border-radius: 6px;
+                padding: 5px 10px;
+                font-family: 'Segoe UI';
+                font-size: 12px;
+                font-weight: bold;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1a1c23;
+                color: white;
+                selection-background-color: #0984e3;
+            }
         """)
 
-        # Ana Düzen: Üstte Video, Altta Sabit & Temiz Timeline Kontrol Paneli
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
@@ -385,11 +443,11 @@ class MainWindow(QMainWindow):
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
 
-        self.btn_open = QPushButton("📁 Video Aç...")
+        self.btn_open = QPushButton(self.t("open_video"))
         self.btn_open.clicked.connect(self.open_file_dialog)
         btn_layout.addWidget(self.btn_open)
 
-        self.btn_play = QPushButton("▶ Oynat")
+        self.btn_play = QPushButton(self.t("play"))
         self.btn_play.clicked.connect(self.toggle_play)
         btn_layout.addWidget(self.btn_play)
 
@@ -398,23 +456,30 @@ class MainWindow(QMainWindow):
 
         btn_layout.addStretch()
 
-        self.lbl_selection = QLabel("Seçim: Yok (Timeline'da Sağ Tık / Shift ile Seç)")
+        self.lbl_selection = QLabel(self.t("no_selection"))
         self.lbl_selection.setStyleSheet("color: #ffd32a; font-weight: bold;")
         btn_layout.addWidget(self.lbl_selection)
 
-        self.btn_copy = QPushButton("📋 Kopyala (Ctrl+C)")
-        self.btn_copy.setToolTip("Seçili aralığı kopyala. Herhangi bir klasöre Ctrl+V ile yapıştırabilirsin.")
+        self.btn_copy = QPushButton(self.t("copy"))
+        self.btn_copy.setToolTip(self.t("copy_tooltip"))
         self.btn_copy.clicked.connect(self.copy_selected_to_clipboard)
         btn_layout.addWidget(self.btn_copy)
 
-        self.btn_save = QPushButton("✂ Farklı Kaydet...")
+        self.btn_save = QPushButton(self.t("save_as"))
         self.btn_save.setObjectName("btnSave")
         self.btn_save.clicked.connect(self.save_selection_as_file)
         btn_layout.addWidget(self.btn_save)
 
-        self.btn_clear = QPushButton("✕ Temizle")
+        self.btn_clear = QPushButton(self.t("clear"))
         self.btn_clear.clicked.connect(self.timeline.clear_range)
         btn_layout.addWidget(self.btn_clear)
+
+        # Dil Seçim Menüsü (TR / EN)
+        self.combo_lang = QComboBox()
+        self.combo_lang.addItem("🇹🇷 TR", "tr")
+        self.combo_lang.addItem("🇬🇧 EN", "en")
+        self.combo_lang.currentIndexChanged.connect(self.on_language_changed)
+        btn_layout.addWidget(self.combo_lang)
 
         bar_layout.addLayout(btn_layout)
         main_layout.addWidget(self.control_bar, stretch=0)
@@ -430,6 +495,45 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+O"), self).activated.connect(self.open_file_dialog)
         QShortcut(QKeySequence.StandardKey.Copy, self).activated.connect(self.copy_selected_to_clipboard)
         QShortcut(QKeySequence(Qt.Key.Key_Space), self).activated.connect(self.toggle_play)
+
+    def t(self, key: str) -> str:
+        """Geçerli dildeki çeviri metnini getirir."""
+        return TRANSLATIONS.get(self.current_lang, TRANSLATIONS["tr"]).get(key, key)
+
+    def on_language_changed(self, index: int):
+        self.current_lang = self.combo_lang.itemData(index)
+        self.update_ui_texts()
+
+    def update_ui_texts(self):
+        title = self.t("title")
+        if self.current_video_path:
+            title = f"{title} - {os.path.basename(self.current_video_path)}"
+        self.setWindowTitle(title)
+        
+        self.btn_open.setText(self.t("open_video"))
+        
+        if self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.btn_play.setText(self.t("pause"))
+        else:
+            self.btn_play.setText(self.t("play"))
+
+        self.btn_copy.setText(self.t("copy"))
+        self.btn_copy.setToolTip(self.t("copy_tooltip"))
+        self.btn_save.setText(self.t("save_as"))
+        self.btn_clear.setText(self.t("clear"))
+
+        # Seçim etiketini güncelle
+        start_ms, end_ms = self.get_selected_range()
+        if start_ms is not None and end_ms is not None and end_ms > start_ms:
+            dur = end_ms - start_ms
+            txt = self.t("selection_format").format(
+                start=format_time(start_ms),
+                end=format_time(end_ms),
+                dur=format_time(dur)
+            )
+            self.lbl_selection.setText(txt)
+        else:
+            self.lbl_selection.setText(self.t("no_selection"))
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -450,28 +554,28 @@ class MainWindow(QMainWindow):
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Video Aç",
+            self.t("open_video"),
             "",
-            "Video Dosyaları (*.mp4 *.mkv *.avi *.mov *.wmv *.flv *.webm);;Tüm Dosyalar (*.*)"
+            self.t("video_filter")
         )
         if file_path:
             self.load_video(file_path)
 
     def load_video(self, file_path: str):
         self.current_video_path = os.path.abspath(file_path)
-        self.setWindowTitle(f"Smart Video Trimmer - {os.path.basename(file_path)}")
+        self.setWindowTitle(f"{self.t('title')} - {os.path.basename(file_path)}")
         self.player.setSource(QUrl.fromLocalFile(self.current_video_path))
         self.player.play()
-        self.btn_play.setText("⏸ Duraklat")
+        self.btn_play.setText(self.t("pause"))
         self.timeline.clear_range()
 
     def toggle_play(self):
         if self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self.player.pause()
-            self.btn_play.setText("▶ Oynat")
+            self.btn_play.setText(self.t("play"))
         else:
             self.player.play()
-            self.btn_play.setText("⏸ Duraklat")
+            self.btn_play.setText(self.t("pause"))
 
     def on_seek_requested(self, ms: int):
         self.player.setPosition(ms)
@@ -489,11 +593,14 @@ class MainWindow(QMainWindow):
     def on_range_changed(self, start_ms: int, end_ms: int):
         if start_ms >= 0 and end_ms >= 0 and end_ms > start_ms:
             dur = end_ms - start_ms
-            self.lbl_selection.setText(
-                f"✂ Seçim: {format_time(start_ms)} → {format_time(end_ms)} ({format_time(dur)})"
+            txt = self.t("selection_format").format(
+                start=format_time(start_ms),
+                end=format_time(end_ms),
+                dur=format_time(dur)
             )
+            self.lbl_selection.setText(txt)
         else:
-            self.lbl_selection.setText("Seçim: Yok (Timeline'da Sağ Tık / Shift ile Seç)")
+            self.lbl_selection.setText(self.t("no_selection"))
 
     def get_selected_range(self):
         if not self.timeline.has_valid_selection():
@@ -521,8 +628,8 @@ class MainWindow(QMainWindow):
         if start_ms is None:
             QMessageBox.information(
                 self, 
-                "Seçim Yok", 
-                "Lütfen önce timeline üzerinde mouse ile sürükleyerek bir aralık belirleyin."
+                self.t("no_selection_title"), 
+                self.t("no_selection_msg")
             )
             return
 
@@ -531,15 +638,17 @@ class MainWindow(QMainWindow):
             mime = QMimeData()
             mime.setUrls([QUrl.fromLocalFile(cut_file)])
             QApplication.clipboard().setMimeData(mime)
+            
+            body = self.t("copied_body").format(filename=os.path.basename(cut_file))
             QToolTip.showText(
                 self.cursor().pos(),
-                f"✔ Video parçası kopyalandı!\nİstediğin klasöre gidip Ctrl+V ile yapıştırabilirsin.\n({os.path.basename(cut_file)})",
+                f"{self.t('copied_title')}\n{body}",
                 self,
                 QRectF(0, 0, 10, 10).toRect(),
                 3500
             )
         else:
-            QMessageBox.warning(self, "Hata", "Video parçası kesilirken bir sorun oluştu.")
+            QMessageBox.warning(self, self.t("error_title"), self.t("error_cut"))
 
     def start_explorer_drag(self):
         start_ms, end_ms = self.get_selected_range()
@@ -561,8 +670,8 @@ class MainWindow(QMainWindow):
         if start_ms is None:
             QMessageBox.information(
                 self, 
-                "Seçim Yok", 
-                "Lütfen önce timeline üzerinde kesmek istediğiniz aralığı seçin."
+                self.t("no_selection_title"), 
+                self.t("no_selection_msg")
             )
             return
 
@@ -572,20 +681,20 @@ class MainWindow(QMainWindow):
 
         out_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Parçayı Farklı Kaydet",
+            self.t("save_dialog_title"),
             default_out,
-            f"Video Dosyası (*{ext});;Tüm Dosyalar (*.*)"
+            f"Video (*{ext});;All (*.*)"
         )
         if out_path:
             res = self.prepare_cut_file(out_path)
             if res:
                 QMessageBox.information(
                     self, 
-                    "Başarılı", 
-                    f"Yeni video parçası başarıyla kaydedildi:\n{out_path}"
+                    self.t("save_success_title"), 
+                    self.t("save_success_msg").format(path=out_path)
                 )
             else:
-                QMessageBox.critical(self, "Hata", "Dosya kaydedilirken FFmpeg hatası oluştu.")
+                QMessageBox.critical(self, self.t("error_title"), self.t("error_cut"))
 
 
 def main():
