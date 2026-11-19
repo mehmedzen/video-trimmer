@@ -474,12 +474,25 @@ class MainWindow(QMainWindow):
         self.btn_clear.clicked.connect(self.timeline.clear_range)
         btn_layout.addWidget(self.btn_clear)
 
-        # Dil Seçim Menüsü (TR / EN)
-        self.combo_lang = QComboBox()
-        self.combo_lang.addItem("🇹🇷 TR", "tr")
-        self.combo_lang.addItem("🇬🇧 EN", "en")
-        self.combo_lang.currentIndexChanged.connect(self.on_language_changed)
-        btn_layout.addWidget(self.combo_lang)
+        # Dil Değiştirme Butonu (Sadece bayrak: Türkçe iken 🇬🇧, İngilizce iken 🇹🇷)
+        self.btn_lang = QPushButton("🇬🇧")
+        self.btn_lang.setToolTip("Switch to English")
+        self.btn_lang.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_lang.setStyleSheet("""
+            QPushButton {
+                font-size: 16px;
+                padding: 4px 10px;
+                background-color: #2b2e3b;
+                border: 1px solid #3d4253;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #383d4e;
+                border-color: #0984e3;
+            }
+        """)
+        self.btn_lang.clicked.connect(self.toggle_language)
+        btn_layout.addWidget(self.btn_lang)
 
         bar_layout.addLayout(btn_layout)
         main_layout.addWidget(self.control_bar, stretch=0)
@@ -500,8 +513,16 @@ class MainWindow(QMainWindow):
         """Geçerli dildeki çeviri metnini getirir."""
         return TRANSLATIONS.get(self.current_lang, TRANSLATIONS["tr"]).get(key, key)
 
-    def on_language_changed(self, index: int):
-        self.current_lang = self.combo_lang.itemData(index)
+    def toggle_language(self):
+        """Dili Türkçe <-> İngilizce arasında değiştirir ve karşı dilin bayrağını gösterir."""
+        if self.current_lang == "tr":
+            self.current_lang = "en"
+            self.btn_lang.setText("🇹🇷")
+            self.btn_lang.setToolTip("Türkçe'ye Geç")
+        else:
+            self.current_lang = "tr"
+            self.btn_lang.setText("🇬🇧")
+            self.btn_lang.setToolTip("Switch to English")
         self.update_ui_texts()
 
     def update_ui_texts(self):
